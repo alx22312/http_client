@@ -197,6 +197,7 @@ int main(int argc, char* argv[])
     boost::asio::io_service io_service;
     client c(io_service, def_port, start_command);
     //load cycle
+    //
     io_service.run();
   }
   catch (std::exception& e)
