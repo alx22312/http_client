@@ -1,0 +1,9 @@
+# depslib dependency file v1.0
+1422469073 source:f:\c\http\http_client\client.cpp
+	<iostream>
+	<istream>
+	<ostream>
+	<string>
+	<boost/asio.hpp>
+	<boost/bind.hpp>
+
