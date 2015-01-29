@@ -56,12 +56,19 @@ public:
 
 private:
 
+//  size_t read_complete(char * buf, const boost::system::error_code & err, size_t bytes)
+//    {
+//        if ( err) return 0;
+//        bool found = std::find(buf, buf + bytes, '\r\n\r\n') < buf + bytes;
+//        // we read one-by-one until we get to enter, no buffering
+//        return found ? 0 : 1;
+//    }
+
   void set_request(bool first)
   {
-    char path_tmp[max_length];
     //std::ostream request_stream(&request_);
 
-    std::cout << "request_ " <<  request_ <<"\n";
+    std::cout << "[[Old request = " <<  request_ <<"|End Old request]]\n";
     char request[max_length];
     if ((path_ == "")||(!first))
     {
@@ -73,16 +80,23 @@ private:
 //        ss >> path_tmp;
     }
     else
-        strcpy(path_tmp, path_.c_str());
-        //path_tmp = path_;
-        sprintf(request, "GET %s HTTP/1.0\r\n",path_tmp);
-        sprintf(request, "%sHost: %s\r\n",request,/*server_.c_str()*/"localhost");
-        sprintf(request, "%sAccept: */*\r\n",request);
-        sprintf(request, "%sConnection: close\r\n\r\n",request);
-        //clear
-        memset(request_, 0, sizeof(request_));
-        //write new
-        sprintf(request_, "%s",request);
+        sprintf(request, "%s",path_.c_str());
+    std::string str;
+    str.append("GET ");
+    str.append(request);
+    str.append(" HTTP/1.0\r\n");
+    //path_tmp = path_;
+    //sprintf(request, "GET %s HTTP/1.0\r\n",request);
+    sprintf(request, "%s",str.c_str());
+    sprintf(request, "%sHost: %s\r\n",request,/*server_.c_str()*/"localhost");
+    sprintf(request, "%sAccept: */*\r\n",request);
+    sprintf(request, "%sConnection: close\r\n\r\n",request);
+    //clear
+    memset(request_, 0, sizeof(request_));
+    //sprintf(request_, "",request);
+    //write new
+    sprintf(request_, "%s",request);
+    std::cout << "[[New request = " <<  request_ <<"|End New request]]\n";
 //    request_stream << "GET " << path_tmp << " HTTP/1.0\r\n";
 //    request_stream << "Host: " << server_ << "\r\n";
 //    request_stream << "Accept: */*\r\n";
@@ -150,6 +164,9 @@ private:
       response_stream >> status_code;
       std::string status_message;
       std::getline(response_stream, status_message);
+      std::cout << "<< response = ";
+      std::cout << http_version;
+      std::cout <<"|End response >> \n";
       if (!response_stream || http_version.substr(0, 5) != "HTTP/")
       {
         std::cout << "Invalid response\n";
@@ -161,8 +178,7 @@ private:
         std::cout << status_code << "\n";
         return;
       }
-
-      // Read the response headers, which are terminated by a blank line.
+      //Read the response headers, which are terminated by a blank line.
       boost::asio::async_read_until(socket_, response_, "\r\n\r\n",
           boost::bind(&client::handle_read_headers, this,
             boost::asio::placeholders::error));
@@ -203,7 +219,7 @@ private:
     }
   }
 
-  void handle_read_content(const boost::system::error_code& err)
+/*  void handle_read_content(const boost::system::error_code& err)
   {
     if (!err)
     {
@@ -220,13 +236,14 @@ private:
     {
       std::cout << "Error: " << err << "\n";
     }
-  }
+  }*/
 
   tcp::resolver resolver_;
   tcp::socket socket_;
   //boost::asio::streambuf request_;
   char request_[max_length];
   boost::asio::streambuf response_;
+  //char response_[max_length];
   const std::string& path_;
   const std::string& server_;
 };
