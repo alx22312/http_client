@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1422530651 source:f:\c\http\http_client\client.cpp
+1422561783 source:f:\c\http\http_client\client.cpp
 	<iostream>
 	<istream>
 	<ostream>

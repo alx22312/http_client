@@ -24,25 +24,6 @@ public:
     // Form the request. We specify the "Connection: close" header so that the
     // server will close the socket after transmitting the response. This will
     // allow us to treat all data up until the EOF as the content.
-/*    std::string path_;
-    std::ostream request_stream(&request_);
-    if (path == "")
-    {
-        char request[max_length];
-        std::cout << "Enter message: ";
-        std::cin.getline(request, max_length);
-        sprintf(request, "%s\n",request);
-        std::stringstream ss;
-        ss << request;
-        ss >> path_;
-    }
-    else
-        path_ = path;
-    request_stream << "GET " << path_ << " HTTP/1.0\r\n";
-    request_stream << "Host: " << server << "\r\n";*/
-    //request_stream << "Accept: */*\r\n";
-    /*request_stream << "Connection: close\r\n\r\n";*/
-    //path_ = path;
     set_request(true);
 
     // Start an asynchronous resolve to translate the server and service names
@@ -56,28 +37,16 @@ public:
 
 private:
 
-//  size_t read_complete(char * buf, const boost::system::error_code & err, size_t bytes)
-//    {
-//        if ( err) return 0;
-//        bool found = std::find(buf, buf + bytes, '\r\n\r\n') < buf + bytes;
-//        // we read one-by-one until we get to enter, no buffering
-//        return found ? 0 : 1;
-//    }
-
   void set_request(bool first)
   {
     //std::ostream request_stream(&request_);
 
-    std::cout << "[[Old request = " <<  request_ <<"|End Old request]]\n";
+//    std::cout << "[[Old request = " <<  request_ <<"|End Old request]]\n";
     char request[max_length];
     if ((path_ == "")||(!first))
     {
         std::cout << "Enter message: ";
         std::cin.getline(request, max_length);
-//        sprintf(request, "%s\n",request);
-//        std::stringstream ss;
-//        ss << request;
-//        ss >> path_tmp;
     }
     else
         sprintf(request, "%s",path_.c_str());
@@ -85,7 +54,6 @@ private:
     str.append("GET ");
     str.append(request);
     str.append(" HTTP/1.0\r\n");
-    //path_tmp = path_;
     //sprintf(request, "GET %s HTTP/1.0\r\n",request);
     sprintf(request, "%s",str.c_str());
     sprintf(request, "%sHost: %s\r\n",request,/*server_.c_str()*/"localhost");
@@ -93,14 +61,8 @@ private:
     sprintf(request, "%sConnection: close\r\n\r\n",request);
     //clear
     memset(request_, 0, sizeof(request_));
-    //sprintf(request_, "",request);
     //write new
     sprintf(request_, "%s",request);
-    std::cout << "[[New request = " <<  request_ <<"|End New request]]\n";
-//    request_stream << "GET " << path_tmp << " HTTP/1.0\r\n";
-//    request_stream << "Host: " << server_ << "\r\n";
-//    request_stream << "Accept: */*\r\n";
-//    request_stream << "Connection: close\r\n\r\n";
   }
 
   void handle_resolve(const boost::system::error_code& err,
@@ -164,9 +126,11 @@ private:
       response_stream >> status_code;
       std::string status_message;
       std::getline(response_stream, status_message);
-      std::cout << "<< response = ";
-      std::cout << http_version;
-      std::cout <<"|End response >> \n";
+//      std::cout << "<< response = ";
+//      std::cout << http_version;
+//      std::cout <<"|End response >> \n";
+//      std::cout <<"\n";
+      //std::cout <<"Start Server Answer: >> \n";
       if (!response_stream || http_version.substr(0, 5) != "HTTP/")
       {
         std::cout << "Invalid response\n";
@@ -198,17 +162,15 @@ private:
       std::string header;
       while (std::getline(response_stream, header) && header != "\r")
         std::cout << header << "\n";
-      std::cout << "\n";
 
       // Write whatever content we already have to output.
       if (response_.size() > 0)
         std::cout << &response_;
+      //std::cout <<"Stop Server Answer >> \n";
       //New
       set_request(false);
-//      boost::asio::async_write(socket_, request_,
-//       boost::bind(&client::handle_write_request, this,
-//         boost::asio::placeholders::error));
       // Start reading remaining data until EOF.
+      //continue cycle
       boost::asio::async_write(socket_, boost::asio::buffer(request_),
           boost::bind(&client::handle_write_request, this,
             boost::asio::placeholders::error));
