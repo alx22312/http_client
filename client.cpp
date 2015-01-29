@@ -2,6 +2,8 @@
 #include <istream>
 #include <ostream>
 #include <string>
+#include <cstring>
+#include <cstdlib>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 
@@ -13,14 +15,16 @@ class client
 {
 public:
   client(boost::asio::io_service& io_service,
-      const std::string& server, const std::string& path)
+      const std::string& server,const std::string& port, const std::string& path)
     : resolver_(io_service),
-      socket_(io_service)
+      socket_(io_service),
+      path_(path),
+      server_(server)
   {
     // Form the request. We specify the "Connection: close" header so that the
     // server will close the socket after transmitting the response. This will
     // allow us to treat all data up until the EOF as the content.
-    std::string path_;
+/*    std::string path_;
     std::ostream request_stream(&request_);
     if (path == "")
     {
@@ -32,15 +36,18 @@ public:
         ss << request;
         ss >> path_;
     }
-    path_ = path;
+    else
+        path_ = path;
     request_stream << "GET " << path_ << " HTTP/1.0\r\n";
-    request_stream << "Host: " << server << "\r\n";
-    request_stream << "Accept: */*\r\n";
-    request_stream << "Connection: close\r\n\r\n";
+    request_stream << "Host: " << server << "\r\n";*/
+    //request_stream << "Accept: */*\r\n";
+    /*request_stream << "Connection: close\r\n\r\n";*/
+    //path_ = path;
+    set_request(true);
 
     // Start an asynchronous resolve to translate the server and service names
     // into a list of endpoints.
-    tcp::resolver::query query(server, "http");
+    tcp::resolver::query query(tcp::v4(),server, port);
     resolver_.async_resolve(query,
         boost::bind(&client::handle_resolve, this,
           boost::asio::placeholders::error,
@@ -48,6 +55,40 @@ public:
   }
 
 private:
+
+  void set_request(bool first)
+  {
+    char path_tmp[max_length];
+    //std::ostream request_stream(&request_);
+
+    std::cout << "request_ " <<  request_ <<"\n";
+    char request[max_length];
+    if ((path_ == "")||(!first))
+    {
+        std::cout << "Enter message: ";
+        std::cin.getline(request, max_length);
+//        sprintf(request, "%s\n",request);
+//        std::stringstream ss;
+//        ss << request;
+//        ss >> path_tmp;
+    }
+    else
+        strcpy(path_tmp, path_.c_str());
+        //path_tmp = path_;
+        sprintf(request, "GET %s HTTP/1.0\r\n",path_tmp);
+        sprintf(request, "%sHost: %s\r\n",request,/*server_.c_str()*/"localhost");
+        sprintf(request, "%sAccept: */*\r\n",request);
+        sprintf(request, "%sConnection: close\r\n\r\n",request);
+        //clear
+        memset(request_, 0, sizeof(request_));
+        //write new
+        sprintf(request_, "%s",request);
+//    request_stream << "GET " << path_tmp << " HTTP/1.0\r\n";
+//    request_stream << "Host: " << server_ << "\r\n";
+//    request_stream << "Accept: */*\r\n";
+//    request_stream << "Connection: close\r\n\r\n";
+  }
+
   void handle_resolve(const boost::system::error_code& err,
       tcp::resolver::iterator endpoint_iterator)
   {
@@ -70,7 +111,7 @@ private:
     if (!err)
     {
       // The connection was successful. Send the request.
-      boost::asio::async_write(socket_, request_,
+      boost::asio::async_write(socket_, boost::asio::buffer(request_),
           boost::bind(&client::handle_write_request, this,
             boost::asio::placeholders::error));
     }
@@ -146,11 +187,14 @@ private:
       // Write whatever content we already have to output.
       if (response_.size() > 0)
         std::cout << &response_;
-
+      //New
+      set_request(false);
+//      boost::asio::async_write(socket_, request_,
+//       boost::bind(&client::handle_write_request, this,
+//         boost::asio::placeholders::error));
       // Start reading remaining data until EOF.
-      boost::asio::async_read(socket_, response_,
-          boost::asio::transfer_at_least(1),
-          boost::bind(&client::handle_read_content, this,
+      boost::asio::async_write(socket_, boost::asio::buffer(request_),
+          boost::bind(&client::handle_write_request, this,
             boost::asio::placeholders::error));
     }
     else
@@ -180,22 +224,31 @@ private:
 
   tcp::resolver resolver_;
   tcp::socket socket_;
-  boost::asio::streambuf request_;
+  //boost::asio::streambuf request_;
+  char request_[max_length];
   boost::asio::streambuf response_;
+  const std::string& path_;
+  const std::string& server_;
 };
 
 int main(int argc, char* argv[])
 {
   try
   {
-    std::string def_port = "127.0.0.1:2015";
-    std::string start_command = "";
+    setlocale(LC_CTYPE, "rus"); // вызов функции настройки локали
+    char *ip = "127.0.0.1";
+    char *def_port = "2015";
+    char *start_command = "";
     if(argv[1] != NULL)
-        def_port = atoi(argv[1]);
-    if(argv[2] != NULL)
-        start_command = atoi(argv[2]);
+    {
+        def_port = argv[1];
+        if(argv[2] != NULL)
+            def_port = argv[2];
+         if(argv[3] != NULL)
+            start_command = argv[3];
+    }
     boost::asio::io_service io_service;
-    client c(io_service, def_port, start_command);
+    client c(io_service, ip,def_port, start_command);
     //load cycle
     io_service.run();
   }
